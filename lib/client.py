@@ -20,6 +20,7 @@
 # IN THE SOFTWARE.
 #
 from msal import PublicClientApplication
+from msal import ConfidentialClientApplication
 from safeguard.sessions.plugin.logging import get_logger
 from safeguard.sessions.plugin.plugin_configuration import PluginConfiguration
 
@@ -27,14 +28,18 @@ logger = get_logger(__name__)
 
 
 class Client:
-    def __init__(self, client_id, authority):
-        self.app = PublicClientApplication(client_id=client_id, authority=authority)
+    def __init__(self, client_id, client_secret, authority):
+        if client_secret is None:
+            self.app = PublicClientApplication(client_id=client_id, authority=authority)
+        else:
+            self.app = ConfidentialClientApplication(client_id=client_id, authority=authority, client_credential=client_secret)
 
     @classmethod
     def from_config(cls, plugin_configuration: PluginConfiguration):
         return cls(
             plugin_configuration.get("azure-ad", "client_id", required=True),
-            plugin_configuration.get("azure-ad", "authority", default="https://login.microsoftonline.com/common")
+            plugin_configuration.get("azure-ad", "client_secret", default=None),
+            plugin_configuration.get("azure-ad", "authority", default="https://login.microsoftonline.com/common") 
         )
 
     def start_flow(self):
@@ -42,6 +47,11 @@ class Client:
 
     def poll_flow(self, flow):
         return self.app.acquire_token_by_device_flow(flow=flow)
+
+    def ropc_grant(self, username, password):
+        scope = ["user.read"]
+        return self.app.acquire_token_by_username_password(username,password, scope)
+        
 
     @staticmethod
     def is_flow_successful(result):

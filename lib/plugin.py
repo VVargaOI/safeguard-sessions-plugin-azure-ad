@@ -26,9 +26,19 @@ from .client import Client
 
 
 class Plugin(AAPlugin):
+
+    def __init__(self, configuration):
+        super().__init__(configuration)
+        self.logger.info("Initializing plugin")
+
     def do_authenticate(self):
-        result = self.azure_client.poll_flow(self.azure_device_flow)
-        self.logger.debug("Device flow result: {}".format(result))
+        if self.plugin_configuration.get("azure-ad", "grant_flow", required=True) == "device-code":
+            result = self.azure_client.poll_flow(self.azure_device_flow)
+            self.logger.debug("Device flow result: {}".format(result))
+        elif self.plugin_configuration.get("azure-ad", "grant_flow", required=True) == "ropc":
+            result = self.azure_client.ropc_grant(username=self.mfa_identity,password=self.connection.key_value_pairs.get("otp"))
+            self.logger.debug("ROPC grant result: {}".format(result))
+
         if self.azure_client.is_flow_successful(result):
             return AAResponse.accept()
         else:
@@ -38,21 +48,31 @@ class Plugin(AAPlugin):
         if self.mfa_password is not None:
             return None
 
-        verification_uri = self.azure_device_flow.get("verification_uri")
-        user_code = self.azure_device_flow.get("user_code")
-        if not verification_uri or not user_code:
-            return AAResponse.deny(reason="Could not acquire device flow from Microsoft Azure. See logs for details.")
+        if self.plugin_configuration.get("azure-ad", "grant_flow", required=True) == "device-code":
+            verification_uri = self.azure_device_flow.get("verification_uri")
+            user_code = self.azure_device_flow.get("user_code")
+            if not verification_uri or not user_code:
+                return AAResponse.deny(reason="Could not acquire device flow from Microsoft Azure. See logs for details.")
 
-        prompt = "Visit {} URL to sign in and use code {} to enable this connection. Press ENTER to continue.".format(
-            verification_uri,
-            user_code,
-        )
+            prompt = "Visit {} URL to sign in and use code {} to enable this connection. Press ENTER to continue.".format(
+                verification_uri,
+                user_code,
+            )
 
-        return AAResponse.need_info(
-            question=prompt,
-            key='otp',
-            disable_echo=False
-        )
+            return AAResponse.need_info(
+                question=prompt,
+                key='otp',
+                disable_echo=False
+            )
+        elif self.plugin_configuration.get("azure-ad", "grant_flow", required=True) == "ropc":
+            prompt = "Enter Entra ID password: "
+            return AAResponse.need_info(
+                question=prompt,
+                key='otp',
+                disable_echo=True
+            )
+        else:
+            return AAResponse.deny("Wrong grant flow in configuration, must be either 'device-code' or 'ropc'")
 
     @lazy_property
     def azure_client(self):

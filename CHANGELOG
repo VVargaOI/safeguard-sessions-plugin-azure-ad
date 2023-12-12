@@ -2,3 +2,7 @@
 
 Initial version. Authenticate but do nothing with the user information. Not usable in production as there is no way to authorize the usage.
 
+0.0.2 2023-12-12
+
+Add support for ROPC authentication for POC/sample purposes.
+Tested with msal 1.26.0, which requires JWT.

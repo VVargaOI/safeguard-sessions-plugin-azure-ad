@@ -49,7 +49,9 @@ Authorization server is a Microsoft Azure AD, also known as Login server.
 
 ## Grant flow
 
-Azure AD for SPS plugin utilizes the [Device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow). For further design details see [OAuth 2.0 device authorization grant flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code).
+Azure AD for SPS plugin utilizes either the [Device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow) or the [Username and password (ROPC) authentication](https://learn.microsoft.com/en-us/entra/msal/dotnet/acquiring-tokens/desktop-mobile/username-password-authentication). For further design details see [OAuth 2.0 device authorization grant flow](https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code) or [OAuth 2.0 Resource Owner Password Credentials](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth-ropc).
+WARNING: In case of ROPC authentication, if users need to use multi-factor authentication (MFA) to log in to the application, they will be blocked instead by Entra ID. Therefore, it is not suggested to use the ROPC authentication alone, this plugin is rather a sample which should be merged with one of the applicable MFA plugins.
+NOTE: When the credentials are injected from SPP in a session-initiated connection, using the AA plugin as the only gateway authentication method is supported until SPS 7.0 only. On versions 7.1-7.4 the AA plugin can be used for MFA only on the top of the built-in authentcation methods of SPS.
 
 ## Pre-requisites
 

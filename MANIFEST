@@ -1,6 +1,6 @@
 api: 1.2
 type: aa
 name: SPS_Azure_AD
-description: One Identity Safeguard for Privileged Sessions Azure AD plugin
-version: 0.0.1
+description: One Identity Safeguard for Privileged Sessions Azure AD plugin supporting device-code-flow and ROPC authentication
+version: 0.0.2
 entry_point: main.py
